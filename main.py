@@ -2,6 +2,9 @@ from time import sleep
 
 import cv2
 import mediapipe as mp
+import positions
+from positions import Horizontal, Vertical
+from pyautogui import press
 
 # Inicjalizacja modelu
 mp_pose = mp.solutions.pose
@@ -9,7 +12,7 @@ pose = mp_pose.Pose()
 mp_drawing = mp.solutions.drawing_utils
 
 # Otwórz wideo
-cap = cv2.VideoCapture("assets/test3.mp4")
+cap = cv2.VideoCapture(0)
 
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -20,10 +23,10 @@ left_part = width // 3
 right_part = width - left_part
 
 # Inicjalizacja pozycji
-pos_vertical = "UNKNOWN"
-pos_horizontal = "UNKNOWN"
-prev_pos_vertical = "UNKNOWN"
-prev_pos_horizontal = "UNKNOWN"
+pos_vertical = Vertical.CENTER
+pos_horizontal = Horizontal.NOTHING
+prev_pos_vertical = Vertical.CENTER
+prev_pos_horizontal = Horizontal.NOTHING
 
 line_colour = (255, 0, 0)
 text_colour = (0, 255, 0)
@@ -34,7 +37,7 @@ while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
-
+    frame = cv2.flip(frame,1)
     if frame_counter % access_count == 0:
         # Konwersja do RGB (MediaPipe wymaga takiego formatu)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -56,29 +59,40 @@ while cap.isOpened():
                 center_x_hip = int((left_hip.x + right_hip.x) / 2 * frame.shape[1])
                 center_y_thumbs = int((left_thumb.y + right_thumb.y) / 2 * frame.shape[0])
                 # Określenie nowej pozycji
-                new_pos_vertical = "UNKNOWN"
+                new_pos_vertical = Vertical.CENTER
                 if center_x_hip <= left_part:
-                    new_pos_vertical = "LEFT"
+                    new_pos_vertical = Vertical.LEFT
                 elif center_x_hip < right_part:
-                    new_pos_vertical = "CENTRE"
+                    new_pos_vertical = Vertical.CENTER
                 else:
-                    new_pos_vertical = "RIGHT"
+                    new_pos_vertical = Vertical.RIGHT
 
-                new_pos_horizontal = "UNKNOWN"
+                new_pos_horizontal = Horizontal.NOTHING
                 if center_y_thumbs <= upper_part:
-                    new_pos_horizontal = "JUMP"
+                    new_pos_horizontal = Horizontal.UP
                 elif center_y_thumbs < lower_part:
-                    new_pos_horizontal = "NOTHING"
+                    new_pos_horizontal = Horizontal.NOTHING
                 else:
-                    new_pos_horizontal = "CROUCH"
+                    new_pos_horizontal = Horizontal.DOWN
 
                 # Zmieniamy `position` tylko, jeśli faktycznie zmieniła się strefa
                 if new_pos_vertical != prev_pos_vertical:
-                    # TODO: Dodać wysyłanie sygnałów strzałek do gry w przeglądarce
+                    if prev_pos_vertical == Vertical.RIGHT and new_pos_vertical == Vertical.CENTER:
+                        press("left")
+                    elif prev_pos_vertical == Vertical.LEFT and new_pos_vertical == Vertical.CENTER:
+                        press("right")
+                    elif prev_pos_vertical == Vertical.CENTER:
+                        press((str(new_pos_vertical)).lower())
+
                     pos_vertical = new_pos_vertical
-                    prev_pos_vertical = new_pos_vertical  # Aktualizacja historii pozycji
+                    prev_pos_vertical = new_pos_vertical
 
                 if new_pos_horizontal != prev_pos_horizontal:
+                    if new_pos_horizontal == Horizontal.UP:
+                        press("up")
+                    elif new_pos_horizontal == Horizontal.DOWN:
+                        press("down")
+
                     pos_horizontal = new_pos_horizontal
                     prev_pos_horizontal = new_pos_horizontal
 
@@ -88,8 +102,8 @@ while cap.isOpened():
     cv2.line(frame, (0, upper_part), (width, upper_part), line_colour, 2)
     cv2.line(frame, (0, lower_part), (width, lower_part), line_colour, 2)
     # Wyświetlenie pozycji na obrazie
-    cv2.putText(frame, pos_vertical, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
-    cv2.putText(frame, pos_horizontal, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
+    cv2.putText(frame, str(pos_vertical), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
+    cv2.putText(frame, str(pos_horizontal), (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
 
     cv2.imshow("Pose Tracking", frame)
     if cv2.waitKey(25) & 0xFF == ord("q"):
