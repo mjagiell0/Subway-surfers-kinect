@@ -25,6 +25,9 @@ pos_horizontal = "UNKNOWN"
 prev_pos_vertical = "UNKNOWN"
 prev_pos_horizontal = "UNKNOWN"
 
+line_colour = (255, 0, 0)
+text_colour = (0, 255, 0)
+
 frame_counter = 0
 access_count = 10 # Ze względu na brak GPU. W przeciwnym wypadku wstawić 1
 while cap.isOpened():
@@ -80,13 +83,13 @@ while cap.isOpened():
                     prev_pos_horizontal = new_pos_horizontal
 
     # Rysowanie linii podziału
-    cv2.line(frame, (left_part, upper_part), (left_part, lower_part), (255, 0, 0), 2)
-    cv2.line(frame, (right_part, upper_part), (right_part, lower_part), (255, 0, 0), 2)
-    cv2.line(frame, (0, upper_part), (width, upper_part), (255, 0, 0), 2)
-    cv2.line(frame, (0, lower_part), (width, lower_part), (255, 0, 0), 2)
+    cv2.line(frame, (left_part, upper_part), (left_part, lower_part), line_colour, 2)
+    cv2.line(frame, (right_part, upper_part), (right_part, lower_part), line_colour, 2)
+    cv2.line(frame, (0, upper_part), (width, upper_part), line_colour, 2)
+    cv2.line(frame, (0, lower_part), (width, lower_part), line_colour, 2)
     # Wyświetlenie pozycji na obrazie
-    cv2.putText(frame, pos_vertical, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(frame, pos_horizontal, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(frame, pos_vertical, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
+    cv2.putText(frame, pos_horizontal, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, text_colour, 2)
 
     cv2.imshow("Pose Tracking", frame)
     if cv2.waitKey(25) & 0xFF == ord("q"):
